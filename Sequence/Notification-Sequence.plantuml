@@ -1,0 +1,111 @@
+@startuml
+actor "Nhân viên" as User
+participant "Frontend" as FE
+participant "Presentation Layer" as PL
+participant "Alert Service" as AlertService
+participant "Persistence Layer" as Persistence
+database "Database" as DB
+
+activate User
+activate FE
+' == Hệ thống phát hiện lỗi ==
+activate AlertService
+AlertService -> Persistence: Kiểm tra dữ liệu
+activate Persistence
+Persistence -> DB: Truy vấn dữ liệu cần kiểm tra
+activate DB
+DB --> Persistence: Trả về kết quả truy vấn
+deactivate DB
+Persistence --> AlertService: Trả về kết quả kiểm tra
+deactivate Persistence
+AlertService -> PL: Phát hiện dữ liệu bất thường
+deactivate AlertService
+activate PL
+PL -> FE: Hiển thị cảnh báo
+deactivate PL
+' == Nhận thông báo cảnh báo ==
+FE -> User: Hiển thị cảnh báo\n(Tiếp nhận / Từ chối)
+
+alt Nhân viên chọn TIẾP NHẬN
+    User -> FE: Chọn tiếp nhận
+    FE -> PL: Thông báo quyết định tiếp nhận
+    activate PL
+    PL -> AlertService: Ghi nhận quyết định và tạo biên bản ghi nhận lỗi
+    activate AlertService
+    AlertService -> Persistence: CreateReport
+    activate Persistence
+    Persistence -> DB: CreateReport
+    activate DB
+    DB --> Persistence: Trả về kết quả tạo biên bản
+    deactivate DB
+    Persistence --> AlertService: Biên bản đã được tạo
+    deactivate Persistence
+    AlertService -> PL: Biên bản đã được tạo
+    deactivate AlertService
+    PL -> FE: Trả về thông tin cơ bản của biên bản
+    deactivate PL
+    FE -> User: Hiển thị giao diện form biên bản
+
+
+    User -> FE: Điền thông tin, ký xác nhận
+    FE -> PL: Gửi thông tin biên bản
+    activate PL
+    PL -> AlertService: Cập nhật biên bản
+    activate AlertService
+    AlertService -> Persistence: Update report
+    activate Persistence
+    Persistence -> DB: Update report record
+    activate DB
+    DB --> Persistence: Trả về kết quả cập nhật
+    deactivate DB
+    Persistence --> AlertService: Trả về kết quả Biên bản đã được cập nhật
+    deactivate Persistence
+    AlertService --> PL: Trả về kết quả Biên bản đã được cập nhật
+    deactivate AlertService
+    PL --> FE: Trả về kết quả thông tin lưu biên bản thành công\nĐịnh dạng JSON
+    deactivate PL
+    FE --> User: Hiển thị thông tin lưu biên bản thành công và tiếp tục quy trình hoặc trở về giao diện chính
+end
+
+alt Nhân viên chọn TỪ CHỐI
+    User -> FE: Chọn từ chối
+    FE -> PL: Thông báo quyết định từ chối
+    activate PL
+    PL -> AlertService: Ghi nhận từ chối và tao biên bản từ chối
+    activate AlertService
+    AlertService -> Persistence: CreateRejectionReport
+    activate Persistence
+    Persistence -> DB: Insert rejection report
+    activate DB
+    DB --> Persistence: Trả về kết quả tạo biên bản từ chối
+    deactivate DB
+    Persistence --> AlertService: Biên bản từ chối đã được tạo
+    deactivate Persistence
+    AlertService -> PL: Biên bản từ chối đã được tạo
+    deactivate AlertService
+    PL -> FE: Trả về thông tin cơ bản của biên bản từ chối
+    deactivate PL
+    FE -> User: Hiển thị giao diện form biên bản từ chối
+
+
+    User -> FE: Gửi lý do, ký xác nhận
+    FE -> PL: Gửi biên bản từ chối
+    activate PL
+    PL -> AlertService: Cập nhật biên bản
+    activate AlertService
+    AlertService -> Persistence: Update report
+    activate Persistence
+    Persistence -> DB: Update report record
+    activate DB
+    DB --> Persistence: Trả về kết quả cập nhật
+    deactivate DB
+    Persistence --> AlertService: Trả về kết quả Biên bản từ chối đã được cập nhật
+    deactivate Persistence
+    AlertService --> PL: Trả về kết quả Biên bản từ chối đã được cập nhật
+    deactivate AlertService
+    PL --> FE: Trả về kết quả thông tin lưu biên bản từ chối thành công\nĐịnh dạng JSON
+    deactivate PL
+    FE --> User: Hiển thị thông tin lưu biên bản từ chối thành công
+end
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+' Khai báo các Actor (Tác nhân)
+actor "Q.lý cấp cao" as QLCC
+actor "Q.lý cấp trung" as QLCT
+actor "Nv kho" as NVKho
+actor "Admin" as Admin
+
+rectangle "Hệ thống Quản lý Kho" {
+  ' Khai báo các Use Case
+  usecase "View SP" as ViewSP
+  usecase "View tồn kho" as ViewTonKho
+  usecase "Xuất kho" as XuatKho
+  usecase "Nhập kho" as NhapKho
+  usecase "Kiểm kho" as KiemKho
+  usecase "Quản lý hàng lỗi" as QLHangLoi
+  usecase "Phân quyền" as PhanQuyen
+
+  ' Khai báo các mối quan hệ giữa Use Case (Extend/Include)
+  ' Mũi tên extend hướng về Use Case cơ sở (Base)
+  XuatKho <.. QLHangLoi : <<extend>>
+  NhapKho <.. QLHangLoi : <<extend>>
+  KiemKho <.. QLHangLoi : <<extend>>
+}
+
+' Khai báo liên kết giữa Actor và Use Case
+QLCC --> ViewSP
+QLCC --> ViewTonKho
+
+QLCT --> ViewSP
+QLCT --> ViewTonKho
+
+NVKho --> ViewSP
+NVKho --> XuatKho
+NVKho --> NhapKho
+NVKho --> KiemKho
+NVKho --> ViewTonKho
+NVKho --> QLHangLoi
+
+Admin --> PhanQuyen
+
+@enduml

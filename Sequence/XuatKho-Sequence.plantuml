@@ -1,0 +1,355 @@
+' @startuml
+
+' title Xuất kho - Sequence Diagram
+
+' actor "Nhân viên kho" as user
+' participant "Frontend" as frontend
+' participant "StaffPresentation" as presentation
+' participant "Inbound/OutboundService" as service
+' participant "StoragePersistence" as persistence1
+' participant "OutboundOrderPersistence" as persistence2
+' database "Database" as database
+
+' activate user
+
+' ' First Stage
+' user -> frontend: Truy cập trang xuất kho
+' activate frontend
+' frontend -> presentation: Lấy danh sách đơn xuất kho\nGET /outbound-orders
+' activate presentation
+' presentation -> service: getOutboundOrders()
+' activate service
+' service -> persistence2: findAllOutboundOrders()
+' activate persistence2
+' persistence2 -> database: Truy vấn danh sách đơn xuất kho
+' activate database
+' database --> persistence2: Danh sách đơn xuất kho
+' deactivate database
+' persistence2 --> service: Danh sách đơn xuất kho
+' deactivate persistence2
+' service --> presentation: Danh sách đơn xuất kho
+' deactivate service
+' presentation --> frontend: Danh sách đơn xuất kho\nĐịnh dạng JSON
+' deactivate presentation
+' frontend --> user: Hiển thị giao diện danh sách đơn xuất kho
+
+' ' Second Stage
+' user -> frontend: Chọn đơn xuất kho
+' frontend -> presentation: Lấy chi tiết đơn xuất kho\nGET /outbound-orders/{id}
+' activate presentation
+' presentation -> service: getOutboundOrderDetails(id)
+' activate service
+' service -> persistence2: findOutboundOrderById(id)
+' activate persistence2
+' persistence2 -> database: Truy vấn chi tiết đơn xuất kho
+' activate database
+' database --> persistence2: Chi tiết đơn xuất kho
+' deactivate database
+' persistence2 --> service: Chi tiết đơn xuất kho
+' deactivate persistence2
+' service --> presentation: Chi tiết đơn xuất kho
+' deactivate service
+' presentation --> frontend: Chi tiết đơn xuất kho\nĐịnh dạng JSON
+' deactivate presentation
+' frontend --> user: Hiển thị chi tiết đơn xuất kho
+
+' ' ' Third Stage
+' ' user -> frontend: Kiểm tra số lượng hàng hoá
+' ' frontend -> presentation: Lấy danh sách hàng hoá\nGET /outbound-orders/{id}/items
+' ' presentation -> service: getItemQuantityInOrders(id)
+' ' service -> persistence1: countItemById(id)
+' ' persistence1 -> database: Truy vấn số lượng hàng hoá
+' ' database -> persistence1: Số lượng và mã hàng hoá
+' ' persistence1 -> service: Mã hàng hoá
+' ' service -> presentation: Mã hàng hoá
+' ' presentation -> frontend: Cập nhật số lượng hàng hoá trên giao diện
+
+' ' Fourth Stage
+' user -> frontend: Bấm nút xuất kho
+' frontend -> presentation: Xuất kho đơn hàng\nPOST /outbound-orders/{orderId}/export
+' activate presentation
+' presentation -> service: exportOutboundOrder(orderId)
+' activate service
+
+' alt "Số lượng hàng đủ"
+'   par "Cập nhật số lượng"
+'     service -> persistence1: updateItemQuantities(itemId)
+'     activate persistence1
+'     persistence1 -> database: Cập nhật số lượng hàng hoá
+'     activate database
+'     database --> persistence1: Cập nhật số lượng thành công
+'     deactivate database
+'     persistence1 --> service: Cập nhật số lượng thành công
+'     deactivate persistence1
+'   else "Cập nhập trạng thái đơn"
+'     service -> persistence2: updateOutboundOrderStatus(orderId)
+'     activate persistence2
+'     persistence2 -> database: Cập nhật trạng thái đơn xuất kho
+'     activate database
+'     database --> persistence2: Cập nhật trạng thái thành công
+'     deactivate database
+'     persistence2 --> service: Cập nhật trạng thái thành công
+'     deactivate persistence2
+'   end
+'   service --> presentation: Xuất kho thành công
+'   presentation --> frontend: Trả về kết quả xuất kho thành công\nĐịnh dạng JSON
+'   frontend --> user: Hiển thị thông báo xuất kho thành công
+' else "Không đủ hàng hoá"
+'   service --> presentation: Thông báo không đủ hàng hoá
+'   deactivate service 
+'   presentation --> frontend: Trả về thông báo không đủ hàng hoá\nĐịnh dạng JSON
+'   frontend --> user: Hiển thị thông báo không đủ hàng hoá\nCó muốn tiếp tục xuất kho?
+'   alt "Người dùng dùng tiếp tục xuất kho"
+'     user -> frontend: Xác nhận tiếp tục xuất kho
+'     frontend -> presentation: Xác nhận xuất kho
+'     presentation --> frontend: Yêu cầu điền lý do xuất thiếu
+'     frontend --> user: Hiển thị nơi điền lý do xuất thiếu
+'     user -> frontend: Nhập lý do xuất thiếu và xác nhận
+'     frontend -> presentation: Xác nhận xuất kho kèm lý do
+'     presentation -> service: exporWithReason(orderId, reason)
+'     activate service
+'     par "Cập nhật số lượng"
+'       service -> persistence1: updateItemQuantities(itemId)
+'       activate persistence1
+'       persistence1 -> database: Cập nhật số lượng hàng hoá
+'       activate database
+'       database --> persistence1: Cập nhật số lượng thành công
+'       deactivate database
+'       persistence1 --> service: Cập nhật số lượng thành công
+'       deactivate persistence1
+'     else "Cập nhập trạng thái đơn"
+'       service -> persistence2: updateOutboundOrderStatus(orderId)
+'       activate persistence2
+'       persistence2 -> database: Cập nhật trạng thái đơn xuất kho
+'       activate database
+'       database --> persistence2: Cập nhật trạng thái thành công
+'       deactivate database
+'       persistence2 --> service: Cập nhật trạng thái thành công
+'       deactivate persistence2
+'     end
+'     service --> presentation: Xuất kho thành công
+'     presentation --> frontend: Trả về kết quả xuất kho thành công\nĐịnh dạng JSON
+'     frontend --> user: Hiển thị thông báo xuất kho thành công
+'   else "Người dùng không tiếp tục xuất kho"
+'     service --> presentation: Huỷ xuất kho
+'     deactivate service
+'     presentation --> frontend: Thông báo huỷ xuất kho\nĐịnh dạng JSON
+'     deactivate presentation
+'     frontend --> user: Quay lại trang danh sách đơn xuất kho
+'   end
+' end
+
+' @enduml
+
+
+@startuml
+
+title Xuất kho - Sequence Diagram
+
+actor "Nhân viên kho" as user
+participant "Frontend" as frontend
+participant "StaffPresentation" as presentation
+participant "Inbound/OutboundService" as service
+participant "StoragePersistence" as persistence1
+participant "OutboundOrderPersistence" as persistence2
+database "Database" as database
+
+activate user
+
+' ==========================================
+' PRE STAGE: Tạo đơn xuất kho & chọn sản phẩm
+' ==========================================
+user -> frontend: Tạo đơn xuất kho mới
+activate frontend
+frontend -> presentation: Tạo đơn xuất kho\nPOST /outbound-orders
+activate presentation
+presentation -> service: createOutboundOrder(request)
+activate service
+service -> persistence2: saveOutboundOrder(order)
+activate persistence2
+persistence2 -> database: Lưu đơn xuất kho
+activate database
+database --> persistence2: Lưu thành công
+deactivate database
+persistence2 --> service: Đơn xuất kho đã lưu
+deactivate persistence2
+service --> presentation: Thông tin đơn xuất kho
+deactivate service
+presentation --> frontend: Thông tin đơn xuất kho\nJSON
+deactivate presentation
+frontend --> user: Hiển thị màn hình chỉnh sửa đơn xuất kho
+
+user -> frontend: Thêm/Chọn sản phẩm cho đơn xuất kho
+frontend -> presentation: Thêm sản phẩm vào đơn\nPOST /outbound-orders/{orderId}/items
+activate presentation
+presentation -> service: addItemToOutboundOrder(orderId, items)
+activate service
+service -> persistence2: updateOutboundOrderItems(orderId, items)
+activate persistence2
+persistence2 -> database: Cập nhật sản phẩm trong đơn
+activate database
+database --> persistence2: Cập nhật thành công
+deactivate database
+persistence2 --> service: Cập nhật thành công
+deactivate persistence2
+service --> presentation: Thông tin đơn sau khi thêm SP
+deactivate service
+presentation --> frontend: Thông tin đơn sau khi thêm SP\nJSON
+deactivate presentation
+frontend --> user: Hiển thị đơn xuất kho với danh sách sản phẩm
+
+' ==========================================
+' First Stage: Xem danh sách đơn xuất kho
+' ==========================================
+user -> frontend: Truy cập trang danh sách đơn xuất kho
+frontend -> presentation: Lấy danh sách đơn xuất kho\nGET /outbound-orders
+activate presentation
+presentation -> service: getOutboundOrders()
+activate service
+service -> persistence2: findAllOutboundOrders()
+activate persistence2
+persistence2 -> database: Truy vấn danh sách đơn xuất kho
+activate database
+database --> persistence2: Danh sách đơn xuất kho
+deactivate database
+persistence2 --> service: Danh sách đơn xuất kho
+deactivate persistence2
+service --> presentation: Danh sách đơn xuất kho
+deactivate service
+presentation --> frontend: Danh sách đơn xuất kho\nJSON
+deactivate presentation
+frontend --> user: Hiển thị giao diện danh sách đơn xuất kho
+
+' ==========================================
+' Second Stage: Xem chi tiết đơn xuất kho
+' ==========================================
+user -> frontend: Chọn đơn xuất kho
+frontend -> presentation: Lấy chi tiết đơn xuất kho\nGET /outbound-orders/{id}
+activate presentation
+presentation -> service: getOutboundOrderDetails(id)
+activate service
+service -> persistence2: findOutboundOrderById(id)
+activate persistence2
+persistence2 -> database: Truy vấn chi tiết đơn xuất kho
+activate database
+database --> persistence2: Chi tiết đơn xuất kho
+deactivate database
+persistence2 --> service: Chi tiết đơn xuất kho
+deactivate persistence2
+service --> presentation: Chi tiết đơn xuất kho
+deactivate service
+presentation --> frontend: Chi tiết đơn xuất kho\nJSON
+deactivate presentation
+frontend --> user: Hiển thị chi tiết đơn xuất kho
+
+' ==========================================
+' Third Stage: Kiểm tra số lượng trước khi xuất kho
+' ==========================================
+user -> frontend: Bấm nút "Kiểm tra số lượng"
+frontend -> presentation: Kiểm tra số lượng đơn xuất kho\nPOST /outbound-orders/{orderId}/check-quantity
+activate presentation
+presentation -> service: checkOutboundOrderQuantity(orderId)
+activate service
+service -> persistence1: getItemQuantities(orderId)
+activate persistence1
+persistence1 -> database: Truy vấn số lượng tồn kho
+activate database
+database --> persistence1: Số lượng tồn kho theo từng sản phẩm
+deactivate database
+persistence1 --> service: Số lượng tồn kho
+deactivate persistence1
+
+alt "Số lượng hàng đủ"
+  service --> presentation: Kết quả kiểm tra: Đủ hàng
+  deactivate service
+  presentation --> frontend: Kết quả kiểm tra: Đủ hàng\nJSON
+  deactivate presentation
+  frontend --> user: Thông báo đủ hàng\nYêu cầu xác nhận xuất kho
+else "Không đủ hàng hoá"
+  service --> presentation: Thông báo không đủ hàng hoá
+  deactivate service
+  presentation --> frontend: Thông báo không đủ hàng hoá\nJSON
+  deactivate presentation
+  frontend --> user: Hiển thị thông báo không đủ hàng hoá\nCó muốn tiếp tục xuất kho?
+
+  alt "Người dùng tiếp tục xuất kho"
+    user -> frontend: Xác nhận tiếp tục xuất kho
+    frontend -> presentation: Xác nhận xuất kho khi thiếu hàng
+    activate presentation
+    presentation --> frontend: Yêu cầu điền lý do xuất thiếu
+    deactivate presentation
+    frontend --> user: Hiển thị nơi điền lý do xuất thiếu
+    user -> frontend: Nhập lý do xuất thiếu và xác nhận
+    frontend -> presentation: Xác nhận xuất kho kèm lý do
+    activate presentation
+    presentation -> service: exportWithReason(orderId, reason)
+    activate service
+
+    par "Cập nhật số lượng"
+      service -> persistence1: updateItemQuantities(itemId)
+      activate persistence1
+      persistence1 -> database: Cập nhật số lượng hàng hoá
+      activate database
+      database --> persistence1: Cập nhật số lượng thành công
+      deactivate database
+      persistence1 --> service: Cập nhật số lượng thành công
+      deactivate persistence1
+    else "Cập nhật trạng thái đơn"
+      service -> persistence2: updateOutboundOrderStatus(orderId)
+      activate persistence2
+      persistence2 -> database: Cập nhật trạng thái đơn xuất kho
+      activate database
+      database --> persistence2: Cập nhật trạng thái thành công
+      deactivate database
+      persistence2 --> service: Cập nhật trạng thái thành công
+      deactivate persistence2
+    end
+
+    service --> presentation: Xuất kho thành công (thiếu hàng, có lý do)
+    deactivate service
+    presentation --> frontend: Trả về kết quả xuất kho thành công\nJSON
+    deactivate presentation
+    frontend --> user: Chuyển màn hình qua trang xác nhận xuất kho
+  else "Người dùng không tiếp tục xuất kho"
+    frontend --> user: Quay lại chi tiết đơn / danh sách đơn\nKhông xuất kho
+  end
+end
+
+' ==========================================
+' Fourth Stage: Xác nhận xuất kho (khi đủ hàng)
+' ==========================================
+user -> frontend: Bấm nút "Xuất kho" (xác nhận)
+frontend -> presentation: Xác nhận xuất kho\nPOST /outbound-orders/{orderId}/export
+activate presentation
+presentation -> service: exportOutboundOrder(orderId)
+activate service
+
+par "Cập nhật số lượng"
+  service -> persistence1: updateItemQuantities(itemId)
+  activate persistence1
+  persistence1 -> database: Cập nhật số lượng hàng hoá
+  activate database
+  database --> persistence1: Cập nhật số lượng thành công
+  deactivate database
+  persistence1 --> service: Cập nhật số lượng thành công
+  deactivate persistence1
+else "Cập nhật trạng thái đơn"
+  service -> persistence2: updateOutboundOrderStatus(orderId)
+  activate persistence2
+  persistence2 -> database: Cập nhật trạng thái đơn xuất kho
+  activate database
+  database --> persistence2: Cập nhật trạng thái thành công
+  deactivate database
+  persistence2 --> service: Cập nhật trạng thái thành công
+  deactivate persistence2
+end
+
+service --> presentation: Xuất kho thành công
+deactivate service
+presentation --> frontend: Trả về kết quả xuất kho thành công\nJSON
+deactivate presentation
+frontend --> user: Hiển thị thông báo xuất kho thành công
+deactivate frontend
+deactivate user
+
+@enduml

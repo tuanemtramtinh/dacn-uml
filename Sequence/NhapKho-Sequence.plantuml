@@ -1,0 +1,243 @@
+@startuml
+
+title Nhập kho - Sequence Diagram
+
+actor "Nhân viên kho" as user
+participant "Frontend" as frontend
+participant "StaffPresentation" as staffPresentation 
+participant "Inbound/Outbound Service" as service
+participant "InboundPersistence" as persistence1
+participant "WarehouseInspectPersistence" as persistence2
+participant "DefectiveOrderPersiistence" as persistence3
+database "Database" as database
+
+activate user
+
+' ===============================
+' PRE STAGE: Tạo phiếu + chọn SP
+' ===============================
+user -> frontend: Tạo phiếu nhập kho mới
+activate frontend
+frontend -> staffPresentation: Tạo phiếu nhập kho mới\nPOST /inbound-orders
+activate staffPresentation
+staffPresentation -> service: createInboundOrder(request)
+activate service
+service -> persistence1: saveInboundOrder(order)
+activate persistence1
+persistence1 -> database: Lưu phiếu nhập kho
+activate database
+database --> persistence1: Lưu thành công
+deactivate database
+persistence1 --> service: Phiếu nhập kho đã được tạo
+deactivate persistence1
+service --> staffPresentation: Thông tin phiếu nhập kho mới
+deactivate service
+staffPresentation --> frontend: Thông tin phiếu nhập kho mới\nJSON
+deactivate staffPresentation
+frontend --> user: Hiển thị phiếu nhập kho mới
+
+
+user -> frontend: Thêm/Chọn sản phẩm nhập kho
+frontend -> staffPresentation: Thêm sản phẩm vào phiếu nhập\nPOST /inbound-orders/{id}/items
+activate staffPresentation
+staffPresentation -> service: addItemsToInboundOrder(orderId, items)
+activate service
+service -> persistence1: updateInboundOrderItems(orderId, items)
+activate persistence1
+persistence1 -> database: Cập nhật danh sách sản phẩm trong phiếu nhập
+activate database
+database --> persistence1: Cập nhật thành công
+deactivate database
+persistence1 --> service: Cập nhật danh sách sản phẩm thành công
+deactivate persistence1
+service --> staffPresentation: Phiếu nhập sau khi thêm sản phẩm
+deactivate service
+staffPresentation --> frontend: Phiếu nhập sau khi thêm sản phẩm\nJSON
+deactivate staffPresentation
+frontend --> user: Hiển thị phiếu nhập với danh sách sản phẩm
+
+'First Stage
+user -> frontend: Truy cập trang nhập kho
+frontend -> staffPresentation: Lấy danh sách  phiếu nhập kho\nGET /inbound-orders
+activate staffPresentation
+staffPresentation -> service: getAllInboundOrders()
+activate service
+service -> persistence1: findAllInboundOrders()
+activate persistence1
+persistence1 -> database: Truy vấn danh sách phiếu nhập kho
+activate database
+database --> persistence1: Trả về danh sách phiếu nhập kho
+deactivate database
+persistence1 --> service: Trả về danh sách phiếu nhập kho
+deactivate persistence1
+service --> staffPresentation: Trả về danh sách phiếu nhập kho
+deactivate service
+staffPresentation --> frontend: Trả về danh sách phiếu nhập kho\nĐịnh dạng JSON
+frontend --> user: Hiển thị giao diện danh sách phiếu nhập kho
+deactivate staffPresentation
+
+'Second Stage
+user -> frontend: Chọn phiếu nhập kho
+frontend -> staffPresentation: Lấy chi tiết phiếu nhập\nGET /inbound-orders/{id}
+activate staffPresentation
+staffPresentation -> service: getInboundOrderDetails(id)
+activate service
+service -> persistence1: findInboundOrderById(id)
+activate persistence1
+persistence1 -> database: Truy vấn chi tiết phiếu nhập kho
+activate database
+database --> persistence1: Trả về chi tiết phiếu nhập kho
+deactivate database
+persistence1 --> service: Trả về chi tiết phiếu nhập kho
+deactivate persistence1
+service --> staffPresentation: Trả về chi tiết phiếu nhập kho
+deactivate service
+staffPresentation --> frontend: Trả về chi tiết phiếu nhập kho\nĐịnh dạng JSON
+deactivate staffPresentation
+frontend --> user: Hiển thị chi tiết phiếu nhập kho
+
+'Third Stage'
+user -> frontend: Kiểm tra số lượng hàng hoá
+frontend -> staffPresentation: Gửi yêu cầu kiểm tra số lượng hàng hoá\nGET /inbound-orders/{id}/checkQuantities
+activate staffPresentation
+staffPresentation -> service: checkInboundOrderQuantity(orderId)
+activate service
+service -> persistence1: getInboundOrderBy(id)
+activate persistence1
+persistence1 -> database: Truy vấn số lượng cần trong đơn nhập kho
+activate database
+database --> persistence1: Trả về số lượng cần trong đơn nhập kho
+deactivate database
+persistence1 --> service: Trả về số lượng cần trong đơn nhập kho
+deactivate persistence1
+alt "Số lượng hàng đủ"
+  service --> staffPresentation: Trả về kết quả số lượng hàng đủ
+  staffPresentation --> frontend: Trả về kết quả số lượng hàng đủ\nĐịnh dạng JSON
+  frontend --> user: Hiển thị giao diện số lượng hàng đủ.
+else "Số lượng hàng không đủ"
+  service --> staffPresentation: Trả về kết quả số lượng hàng thiếu.
+  staffPresentation --> frontend: Trả về kết quả số lượng hàng thiếu\nĐịnh dạng JSON
+  frontend --> user: Hiển thị cảnh báo thiếu hàng
+  alt "Tiếp tục nhập hàng"
+    user -> frontend: Chọn tiếp tục nhập hàng
+    frontend -> staffPresentation: Gửi yêu cầu tiếp tục nhập hàng
+    staffPresentation -> service: Gửi yêu cầu tiếp tục nhập hàng
+    service --> staffPresentation: Trả về yêu cầu nhập lý do nhập thiếu
+    staffPresentation --> frontend: Trả về yêu cầu nhập lý do nhập thiếu\nĐịnh dạng JSON
+    frontend --> user: Hiển thị nơi điền lý do nhập thiếu
+    user -> frontend: Điền lý do nhập thiếu
+    frontend -> staffPresentation: Gửi lý do nhập thiếu
+    staffPresentation -> service: saveImportReason(orderId)
+    service -> persistence1: saveImportReason(orderId)
+    activate persistence1
+    persistence1 -> database: Lưu lại lý do nhập hàng thiếu cho đơn
+    activate database
+    database --> persistence1: Trả về thông báo lưu thành công
+    deactivate database
+    persistence1 --> service: Trả về thông báo lưu thành công
+    deactivate persistence1
+    service --> staffPresentation: Trả về thông báo lưu thành công
+    deactivate service
+    staffPresentation --> frontend: Trả về thông báo lưu thành công
+    deactivate staffPresentation
+    frontend --> user: Hiển thị thông báo lưu lý do thành công
+  else "Từ chối nhập hàng"
+    user -> frontend: Người dùng từ chối nhập hàng
+    frontend --> user: Quay lại danh sách phiếu nhập kho
+  end
+end
+
+'Fourth Stage
+user -> frontend: Kiểm tra chất lượng hàng hoá
+frontend -> staffPresentation: Gửi yêu cầu kiểm tra chất lượng\nPOST /inbound-orders/{id}/inspect
+activate staffPresentation
+staffPresentation -> service: inspectInboundOrders(id)\nKiểm tra trạng thái phiếu\nGhi nhận kết quả kiểm tra\nCập nhật trạng thái cho sản phẩm
+activate service
+
+par "Tạo đơn nhập kho tạm thời"
+  service -> persistence1: createTempInboundOrder()
+  activate persistence1
+  persistence1 -> database: Tạo đơn nhập kho tạm thời
+  activate database
+  database --> persistence1: Trả kết quả tạo đơn nhập kho tạm thời
+  deactivate database
+  persistence1 --> service: Trả kết quả tạo đơn nhập kho tạm thời
+  deactivate persistence1
+else "Lưu kết quả kiểm tra"
+  service -> persistence2: Liên hệ xuống InventoryManagementService\n createWarehouseInspect(id)
+  activate persistence2
+  persistence2 -> database: Lưu kết quả kiểm tra
+  activate database
+  database --> persistence2: Trả kết quả cập nhật kiểm tra chất lượng
+  deactivate database
+  persistence2 --> service: Trả kết quả cập nhật kiểm tra chất lượng
+  deactivate persistence2
+else "Tạo đơn xử lý lỗi tạm thời"
+  service -> persistence3: Liên hệ xuống InventoryManagement\ncreateDefectiveOrder()
+  activate persistence3
+  persistence3 -> database: Tạo đơn xử lý lỗi
+  activate database
+  database --> persistence3: Trả về kết quả tạo đơn xử lý lỗi thành công
+  deactivate database
+  persistence3 --> service: Trả kết quả tạo đơn xử lý lỗi
+  deactivate persistence3
+end
+service --> staffPresentation: Trả về kết quả cập nhật kiểm tra chất lượng
+deactivate service
+staffPresentation --> frontend: Trả về kết quả cập nhập kiểm tra chất lượng thành công
+deactivate staffPresentation
+frontend --> user: Cập nhật kết quả kiểm tra chất lượng trên giao diện
+
+'Sixth Stage'
+user -> frontend: Chọn vị trí nhập kho
+frontend -> staffPresentation: Gửi yêu cầu chọn vị trí nhập kho
+activate staffPresentation
+staffPresentation -> service: chooseInboundLocation(location, orderId)
+activate service
+service -> persistence1: saveInboundLocation(location, orderId)
+activate persistence1
+persistence1 -> database: Lưu lại vị trí lưu kho
+activate database
+database --> persistence1: Trả về thông báo chọn vị trí kho thành công
+deactivate database
+persistence1 --> service: Trả về thông báo chọn vị trí kho thành công
+deactivate persistence1
+service --> staffPresentation: Trả về thông báo chọn vị trí kho thành công
+deactivate service
+staffPresentation --> frontend: Trả về thông báo chọn vị trí kho thành công\nĐịnh dạng JSON
+deactivate staffPresentation
+frontend --> user: Hiển thị chọn vị trí kho thành công
+
+'Seventh Stage'
+user -> frontend: Xác nhận nhập kho
+frontend -> staffPresentation: Gửi yêu cầu xác nhận nhập kho\nPOST /inbound-orders/{id}/confirm
+activate staffPresentation
+staffPresentation -> service: confirmInboundOrder(id)
+activate service
+par "Cập nhật trạng thái phiếu xuất kho"
+  service -> persistence1: confirmInboundOrder(id)
+  activate persistence1
+  persistence1 -> database: Cập nhật trạng thái phiếu nhập kho
+  activate database
+  database --> persistence1: Trả về kết quả cập nhật
+  deactivate database
+  persistence1 --> service: Trả về kết quả cập nhật
+  deactivate persistence1
+else "Cập nhật số lượng"
+  service -> persistence2: updateItemQuantities(itemId)
+    activate persistence2
+    persistence2 -> database: Cập nhật số lượng hàng hoá
+    activate database
+    database --> persistence2: Cập nhật số lượng thành công
+    deactivate database
+    persistence2 --> service: Cập nhật số lượng thành công
+    deactivate persistence2
+end
+service --> staffPresentation: Trả về kết quả xác nhận nhập kho
+deactivate service
+staffPresentation --> frontend: Trả về kết quả cập nhật trạng thái nhập kho\nĐịnh dạng JSON
+deactivate staffPresentation
+frontend --> user: Cập nhật trạng thái nhập kho thành công trên giao diện
+
+
+@enduml

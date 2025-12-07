@@ -1,0 +1,45 @@
+@startuml
+
+title 'Hệ thống Quản lý kho thông minh - Usecase Diagram'
+
+left to right direction
+actor "Nhân viên" as employee
+actor "Quản trị" as QuanTri
+actor "Quản Lý Cấp Cao" as QuanLyCapCao
+actor "Quản lý Cấp Trung" as QuanLyCapTrung
+
+rectangle "Hệ thống" {
+  usecase "Xuất kho" as XuatKho
+  usecase "Nhập kho" as NhapKho
+  usecase "Kiểm kê kho" as KiemKeKho
+  usecase "Quản lý đơn lỗi" as QuanLiDonLoi
+  usecase "Xem sản phẩm" as XemSanPham
+  usecase "Xem tồn kho" as XemTonKho
+  usecase "Quản lí thông tin chung của kho" as QuanLiThongTinChungKho
+  usecase "Phân Quyền" as PhanQuyen
+}
+
+employee --> QuanLiDonLoi
+employee --> XuatKho
+employee --> NhapKho
+employee --> KiemKeKho
+employee --> XemSanPham
+employee --> XemTonKho
+
+QuanLyCapTrung --> QuanLiThongTinChungKho
+QuanLyCapTrung --> XemSanPham 
+QuanLyCapTrung --> XemTonKho 
+
+XemSanPham <-- QuanLyCapCao
+XemTonKho <-- QuanLyCapCao
+
+
+PhanQuyen <-- QuanTri
+
+QuanLiDonLoi .> XuatKho  : <<extend>>
+QuanLiDonLoi .> NhapKho  : <<extend>>
+QuanLiDonLoi ..> KiemKeKho : <<extend>>
+
+
+
+@enduml

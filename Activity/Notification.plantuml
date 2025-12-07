@@ -1,0 +1,48 @@
+@startuml
+
+|Hệ thống|
+start
+:Hệ thống phát hiện lỗi sai phạm;
+:Hệ thống hiển thị thông báo lỗi 
+(Tiếp nhận/Từ chối);
+
+|Nhân viên|
+:Nhân viên nhận thông báo lỗi;
+
+if (Nhân viên muốn tiếp tục xử lý lỗi?) then (YES)
+
+  |Hệ thống|
+  :Ghi nhận quyết định của nhân viên;
+  :Tạo biên bản ghi nhận lỗi;
+
+  |Nhân viên|
+  :Điền thông tin vào biên bản;
+  :Ký xác nhận biên bản;
+
+  |Hệ thống|
+  :Lưu biên bản ghi nhận lỗi;
+  :Tiếp tục quy trình hiện tại 
+  của nhân viên hoặc trở về 
+  giao diện chính;
+  
+else (NO)
+
+  |Hệ thống|
+  :Tạo biên bản ghi nhận lỗi 
+  và từ chối tiếp nhận;
+
+  |Nhân viên|
+  :Nhận biên bản ghi nhận lỗi;
+  :Nhập lý do từ chối tiếp nhận;
+  :Ký xác nhận biên bản;
+
+  |Hệ thống|
+  :Lưu biên bản ghi nhận lỗi;
+  :Dừng quy trình hiện tại 
+  của nhân viên;
+  
+endif
+
+stop
+
+@enduml

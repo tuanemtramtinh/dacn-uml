@@ -1,0 +1,60 @@
+@startuml
+title Quy trình xuất kho sử dụng RFID (số lượng lớn & lẻ)
+
+|Bộ phận sản xuất/Giao hàng|
+start
+:Tạo yêu cầu xuất kho;
+
+|Nhân viên xuất kho|
+
+|Hệ thống|
+:Hiển thị yêu cầu xuất kho kho (mã hàng, số lượng, đơn vị tính, người yêu cầu, thời gian xuất);
+
+|Nhân viên xuất kho|
+:Tiếp nhận yêu cầu xuất kho;
+:Tạo phiếu xuất kho dựa trên dữ liệu được yêu cầu;
+:Chuẩn bị hàng theo phiếu xuất kho;
+
+|Hệ thống|
+:Kiểm tra loại xuất kho;
+
+if ("Là xuất kho số lượng lớn?") then
+  -> YES;
+  :Di chuyển hàng đến cổng kiểm soát RFID;
+  
+  |Hệ thống|
+  :Đọc thông tin sản phẩm từ máy đọc RFID;
+else
+  -> NO;
+  :Nhập số lượng hàng xuất lẻ;
+  
+  |Hệ thống|
+  :Gắn nhãn RFID mới cho phần còn lại;
+endif
+
+|Hệ thống|
+:So sánh, đối chiếu dữ liệu với phiếu xuất kho;
+
+if ("Số lượng khớp với phiếu?") then
+  -> YES;
+  :Hiển thị thông báo đủ điều kiện xuất kho;
+  :Hệ thống cho phép xuất kho;
+else
+  -> NO;
+  :Hiển thị cảnh báo về hoạt động bất thường (sai mã, sai số lượng, sai vị trí...);
+  :Hiển thị thông báo có muốn tiếp tục xuất kho;
+  if ("Đồng ý xuất kho?") then
+    -> YES;
+    : Hệ thống tạo biên bản xuất kho bất thường;
+  else
+    -> NO;
+    :Hệ thống từ chối xuất kho và tạo biên bản;
+    stop
+  endif
+endif
+
+:Hệ thống trừ số lượng tồn kho;
+:Ghi nhận lịch sử xuất kho (ngày giờ, người thực hiện, mã hàng, số lượng...);
+stop
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml
+
+title Hiển thị cảnh báo - Use Case Diagram
+
+left to right direction
+actor "Nhân viên" as nv
+
+
+rectangle "Hệ thống" {
+  usecase "Hiển thị cảnh báo" as UC1
+  usecase "Xử lý cảnh báo" as UC2
+  usecase "Điền biên bản, ký tên xử lý cảnh báo" as UC3
+}
+
+nv --> UC3
+nv --> UC2
+UC3 .> UC2: <<include>>
+UC2 ..> UC1: <<include>>
+
+
+@enduml
