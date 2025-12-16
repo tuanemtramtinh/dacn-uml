@@ -1,0 +1,38 @@
+@startuml
+
+title Nhập kho: Xem chi tiết phiếu nhập kho
+
+hide footbox
+
+actor "Nhân viên kho" as user
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+database ":Database" as database
+
+activate user
+user -> frontend: Chọn phiếu nhập kho
+activate frontend
+frontend -> staffPresentation: Lấy chi tiết phiếu nhập\nGET /inbound-orders/{id}
+activate staffPresentation
+staffPresentation -> service: getInboundOrderDetails(id)
+activate service
+service -> persistence1: findInboundOrderById(id)
+activate persistence1
+persistence1 -> database: Truy vấn chi tiết phiếu nhập kho
+activate database
+database --> persistence1: Trả về chi tiết phiếu nhập kho
+deactivate database
+persistence1 --> service: Trả về chi tiết phiếu nhập kho
+deactivate persistence1
+service --> staffPresentation: Trả về chi tiết phiếu nhập kho
+deactivate service
+staffPresentation --> frontend: Trả về chi tiết phiếu nhập kho\nĐịnh dạng JSON
+deactivate staffPresentation
+frontend --> user: Hiển thị chi tiết phiếu nhập kho
+deactivate frontend
+deactivate user
+
+@enduml
+

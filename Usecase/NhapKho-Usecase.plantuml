@@ -9,7 +9,6 @@ rectangle "<<subsystem>>\nInbound-Outbound" {
   usecase "Kiểm tra số lượng" as UC1
   usecase "Tạo phiếu nhập kho" as UC2
   usecase "Thực hiện Nhập kho" as UC3
-  usecase "Tạo biên bản ghi lý do nhập thiếu" as UC4
   usecase "Kiểm tra chất lượng" as UC5
   usecase "Tạo đơn xử lý lỗi" as UC6
   ' usecase "Chọn vị trí lưu trữ" as UC6
@@ -19,7 +18,6 @@ nv --> UC3
 ' UC3 ..> UC1: <<include>>
 UC3 ..> UC2: <<include>>
 ' UC1 <.. UC4: <<extend>>
-UC1 <.. UC4: <<extend>>
 UC3 ..> UC1: <<include>>
 UC3 ..> UC5: <<include>>
 UC5 <. UC6: <<extend>>

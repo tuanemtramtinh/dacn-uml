@@ -12,103 +12,97 @@ start
 (ĐVSX / Bên thứ ba / Đơn chuyển kho)
 và nút "Tạo phiếu nhập kho";
 
-|Nhân viên nhập kho|
-:Chọn "Tạo phiếu nhập kho";
-
-if ("Tạo từ đơn có sẵn\nhay tạo mới từ đầu?") then
-  -> "Từ đơn có sẵn";
-  :Chọn một đơn nhập kho / hoá đơn cần thực hiện;
-
-  '--- Xử lý RFID cho sản phẩm ---
-  if ("Đơn nhập từ bên thứ ba\ncó sản phẩm mới?") then
-    -> YES;
-    :Nhập thông tin sản phẩm mới;
-    :Sinh mã RFID cho sản phẩm mới;
-  else
-    -> NO;
-    :Sử dụng dữ liệu sản phẩm đã có;
-  endif
-
-else
-  -> "Tạo phiếu mới từ đầu";
-  |Hệ thống|
-  :Yêu cầu chọn loại nhập kho
-  (ĐVSX / Bên thứ ba / Đơn chuyển kho);
+if ("Tạo phiếu nhập kho") then
+  -> YES;
   |Nhân viên nhập kho|
-  :Chọn sản phẩm và nhập số lượng dự kiến;
-endif
+  :Chọn "Tạo phiếu nhập kho";
 
-:In / gắn thẻ RFID cho lô hàng;
+  if ("Tạo từ yêu cầu có sẵn\nhay tạo mới từ đầu?") then
+    -> "Từ yêu cầu có sẵn";
+    :Chọn một yêu cầu nhập kho / hoá đơn cần thực hiện;
 
-:Đem lô hàng quét RFID tại kho;
-
-'--- LOOP bắt đầu từ đây ---
-repeat
-
-  |Hệ thống|
-  :Đọc thông tin từ thiết bị RFID;
-  :So sánh với phiếu nhập hàng;
-  |Nhân viên nhập kho|
-  if ("Lô hàng không đủ số lượng?") then
-    -> NO;
-    :Hiển thị cảnh báo thiếu số lượng;
-    :Hiển thị lựa chọn tiếp tục nhập kho;
-    if ("Đồng ý nhập kho?") then
+    '--- Xử lý RFID cho sản phẩm ---
+    if ("Đơn nhập từ bên thứ ba\ncó sản phẩm mới?") then
       -> YES;
-      :Ghi nhận trạng thái không đủ số lượng của lô hàng\nvào phiếu nhập kho;
-
+      :Nhập thông tin sản phẩm mới;
     else
       -> NO;
-      :Bỏ qua lô hàng này;
-      :Ghi nhhận trạng thái không cần kiểm tra chất lượng cho lô hàng;
+      :Sử dụng dữ liệu sản phẩm đã có;
     endif
-    
-  |Hệ thống|
+
   else
-    -> YES;
-    :Ghi nhận trạng thái đủ số lượng của lô hàng cho phiếu nhập kho;
+    -> "Tạo phiếu mới từ đầu";
+    :Yêu cầu chọn loại nhập kho
+    (ĐVSX / Bên thứ ba / Đơn chuyển kho);
+    :Chọn sản phẩm và nhập số lượng dự kiến;
   endif
 
-repeat while (Còn lô hàng cần quét?) is (YES)
--> NO;
+  :Sinh mã RFID cho sản phẩm;
+  :In / gắn thẻ RFID cho lô hàng;
+
+  :Đem lô hàng quét RFID tại kho;
+
+  '--- LOOP bắt đầu từ đây ---
+  repeat
+
+    |Hệ thống|
+    :Đọc thông tin từ thiết bị RFID;
+    :So sánh với phiếu nhập hàng;
+    |Nhân viên nhập kho|
+    if ("Lô hàng không đủ số lượng?") then
+      -> NO;
+      :Hiển thị cảnh báo thiếu số lượng;
+      :Hiển thị lựa chọn tiếp tục nhập kho;
+      if ("Đồng ý nhập kho?") then
+        -> YES;
+        :Ghi nhận trạng thái không đủ số lượng của lô hàng\nvào phiếu nhập kho;
+
+      else
+        -> NO;
+        :Bỏ qua lô hàng này;
+        :Ghi nhhận trạng thái không cần kiểm tra chất lượng cho lô hàng;
+      endif
+      
+    |Hệ thống|
+    else
+      -> YES;
+      :Ghi nhận trạng thái đủ số lượng của lô hàng cho phiếu nhập kho;
+    endif
+
+  repeat while (Còn lô hàng cần quét?) is (YES)
+  -> NO;
 
 
-|Nhân viên nhập kho|
-if ("Có muốn kiểm tra chất lượng?/Hàng cần kiểm tra chất lượng?") then
-  -> YES;
-  :Kiểm tra chất lượng/Phân loại hàng hoá;
-  if ("Có hàng lỗi?") then
+  |Nhân viên nhập kho|
+  if ("Có muốn kiểm tra chất lượng?/Hàng cần kiểm tra chất lượng?") then
     -> YES;
-    :Đánh dấu lô hàng có hàng lỗi;
+    :Kiểm tra chất lượng/Phân loại hàng hoá;
+    if ("Có hàng lỗi?") then
+      -> YES;
+      :Đánh dấu lô hàng có hàng lỗi;
+    else
+      -> NO;
+      :Đánh dấu lô hàng đạt chất lượng;
+    endif
   else
     -> NO;
-    :Đánh dấu lô hàng đạt chất lượng;
+    :Bỏ qua kiểm tra chất lượng;
+    |Hệ thống|
+    :Ghi nhận trạng thái nhập kho không kiểm tra chất lượng\n của lô hàng vào phiếu nhập kho;
   endif
-else
-  -> NO;
-  :Bỏ qua kiểm tra chất lượng;
+
+  |Nhân viên nhập kho|
+  :Chọn vị trí lưu trữ lô hàng;
+
+  :Xác nhận nhập kho;
+
   |Hệ thống|
-  :Ghi nhận trạng thái nhập kho không kiểm tra chất lượng\n của lô hàng vào phiếu nhập kho;
-endif
+  :Cập nhật dữ liệu cho phiếu nhập kho (trạng thái, vị trí);
 
-|Nhân viên nhập kho|
-if ("Đơn hàng có hàng lỗi?") then
-  -> YES;
-  fork
-    :Chọn vị trí lưu trữ cho lô hàng lỗi;
-  fork again
-    :Chọn vị trí lưu trữ cho lô hàng đạt;
-  end fork
+  stop
 else
   -> NO;
-  :Chọn vị trí lưu trữ cho lô hàng đạt;
-endif
-
-:Bấm nút xác nhận nhập kho;
-
-|Hệ thống|
-:Cập nhật dữ liệu cho phiếu nhập kho (trạng thái, vị trí);
-
-stop
+  :Kết thúc quay trình;
+  stop
 @enduml
 

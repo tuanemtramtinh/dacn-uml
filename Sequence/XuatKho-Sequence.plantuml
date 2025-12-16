@@ -146,13 +146,15 @@
 
 title Xuất kho - Sequence Diagram
 
+hide footbox
+
 actor "Nhân viên kho" as user
-participant "Frontend" as frontend
-participant "StaffPresentation" as presentation
-participant "Inbound/OutboundService" as service
-participant "StoragePersistence" as persistence1
-participant "OutboundOrderPersistence" as persistence2
-database "Database" as database
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as presentation
+participant ":Inbound/OutboundService" as service
+participant ":StoragePersistence" as persistence1
+participant ":OutboundOrderPersistence" as persistence2
+database ":Database" as database
 
 activate user
 

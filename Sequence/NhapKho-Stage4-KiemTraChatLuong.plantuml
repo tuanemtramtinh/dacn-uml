@@ -1,0 +1,62 @@
+@startuml
+
+title Nhập kho: Kiểm tra chất lượng hàng hóa
+
+hide footbox
+
+actor "Nhân viên kho" as user
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+participant ":WarehouseInspectPersistence" as persistence2
+participant ":DefectiveOrderPersiistence" as persistence3
+database ":Database" as database
+
+activate user
+user -> frontend: Kiểm tra chất lượng hàng hoá
+activate frontend
+frontend -> staffPresentation: Gửi yêu cầu kiểm tra chất lượng\nPOST /inbound-orders/{id}/inspect
+activate staffPresentation
+staffPresentation -> service: inspectInboundOrders(id)\nKiểm tra trạng thái phiếu\nGhi nhận kết quả kiểm tra\nCập nhật trạng thái cho sản phẩm
+activate service
+
+par "Tạo đơn nhập kho tạm thời"
+  service -> persistence1: createTempInboundOrder()
+  activate persistence1
+  persistence1 -> database: Tạo đơn nhập kho tạm thời
+  activate database
+  database --> persistence1: Trả kết quả tạo đơn nhập kho tạm thời
+  deactivate database
+  persistence1 --> service: Trả kết quả tạo đơn nhập kho tạm thời
+  deactivate persistence1
+else "Lưu kết quả kiểm tra"
+  service -> persistence2: Liên hệ xuống InventoryManagementService\n createWarehouseInspect(id)
+  activate persistence2
+  persistence2 -> database: Lưu kết quả kiểm tra
+  activate database
+  database --> persistence2: Trả kết quả cập nhật kiểm tra chất lượng
+  deactivate database
+  persistence2 --> service: Trả kết quả cập nhật kiểm tra chất lượng
+  deactivate persistence2
+else "Tạo đơn xử lý lỗi tạm thời"
+  service -> persistence3: Liên hệ xuống InventoryManagement\ncreateDefectiveOrder()
+  activate persistence3
+  persistence3 -> database: Tạo đơn xử lý lỗi
+  activate database
+  database --> persistence3: Trả về kết quả tạo đơn xử lý lỗi thành công
+  deactivate database
+  persistence3 --> service: Trả kết quả tạo đơn xử lý lỗi
+  deactivate persistence3
+end
+
+service --> staffPresentation: Trả về kết quả cập nhật kiểm tra chất lượng
+deactivate service
+staffPresentation --> frontend: Trả về kết quả cập nhập kiểm tra chất lượng thành công
+deactivate staffPresentation
+frontend --> user: Cập nhật kết quả kiểm tra chất lượng trên giao diện
+deactivate frontend
+deactivate user
+
+@enduml
+

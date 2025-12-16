@@ -1,0 +1,71 @@
+@startuml
+
+title Nhập kho: Kiểm tra số lượng hàng hóa
+
+hide footbox
+
+actor "Nhân viên kho" as user
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+database ":Database" as database
+
+activate user
+user -> frontend: Kiểm tra số lượng hàng hoá
+activate frontend
+frontend -> staffPresentation: Gửi yêu cầu kiểm tra số lượng hàng hoá\nGET /inbound-orders/{id}/checkQuantities
+activate staffPresentation
+staffPresentation -> service: checkInboundOrderQuantity(orderId)
+activate service
+service -> persistence1: getInboundOrderBy(id)
+activate persistence1
+persistence1 -> database: Truy vấn số lượng cần trong đơn nhập kho
+activate database
+database --> persistence1: Trả về số lượng cần trong đơn nhập kho
+deactivate database
+persistence1 --> service: Trả về số lượng cần trong đơn nhập kho
+deactivate persistence1
+
+alt "Số lượng hàng đủ"
+  service --> staffPresentation: Trả về kết quả số lượng hàng đủ
+  staffPresentation --> frontend: Trả về kết quả số lượng hàng đủ\nĐịnh dạng JSON
+  frontend --> user: Hiển thị giao diện số lượng hàng đủ.
+else "Số lượng hàng không đủ"
+  service --> staffPresentation: Trả về kết quả số lượng hàng thiếu.
+  staffPresentation --> frontend: Trả về kết quả số lượng hàng thiếu\nĐịnh dạng JSON
+  frontend --> user: Hiển thị cảnh báo thiếu hàng
+  alt "Tiếp tục nhập hàng"
+    user -> frontend: Chọn tiếp tục nhập hàng
+    frontend -> staffPresentation: Gửi yêu cầu tiếp tục nhập hàng
+    staffPresentation -> service: Gửi yêu cầu tiếp tục nhập hàng
+    service --> staffPresentation: Trả về yêu cầu nhập lý do nhập thiếu
+    staffPresentation --> frontend: Trả về yêu cầu nhập lý do nhập thiếu\nĐịnh dạng JSON
+    frontend --> user: Hiển thị nơi điền lý do nhập thiếu
+    user -> frontend: Điền lý do nhập thiếu
+    frontend -> staffPresentation: Gửi lý do nhập thiếu
+    staffPresentation -> service: saveImportReason(orderId)
+    service -> persistence1: saveImportReason(orderId)
+    activate persistence1
+    persistence1 -> database: Lưu lại lý do nhập hàng thiếu cho đơn
+    activate database
+    database --> persistence1: Trả về thông báo lưu thành công
+    deactivate database
+    persistence1 --> service: Trả về thông báo lưu thành công
+    deactivate persistence1
+    service --> staffPresentation: Trả về thông báo lưu thành công
+    deactivate service
+    staffPresentation --> frontend: Trả về thông báo lưu thành công
+    deactivate staffPresentation
+    frontend --> user: Hiển thị thông báo lưu lý do thành công
+  else "Từ chối nhập hàng"
+    user -> frontend: Người dùng từ chối nhập hàng
+    frontend --> user: Quay lại danh sách phiếu nhập kho
+  end
+end
+
+deactivate frontend
+deactivate user
+
+@enduml
+

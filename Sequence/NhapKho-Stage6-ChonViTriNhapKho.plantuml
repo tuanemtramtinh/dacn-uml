@@ -1,0 +1,38 @@
+@startuml
+
+title Nhập kho: Chọn vị trí nhập kho
+
+hide footbox
+
+actor "Nhân viên kho" as user
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+database ":Database" as database
+
+activate user
+user -> frontend: Chọn vị trí nhập kho
+activate frontend
+frontend -> staffPresentation: Gửi yêu cầu chọn vị trí nhập kho
+activate staffPresentation
+staffPresentation -> service: chooseInboundLocation(location, orderId)
+activate service
+service -> persistence1: saveInboundLocation(location, orderId)
+activate persistence1
+persistence1 -> database: Lưu lại vị trí lưu kho
+activate database
+database --> persistence1: Trả về thông báo chọn vị trí kho thành công
+deactivate database
+persistence1 --> service: Trả về thông báo chọn vị trí kho thành công
+deactivate persistence1
+service --> staffPresentation: Trả về thông báo chọn vị trí kho thành công
+deactivate service
+staffPresentation --> frontend: Trả về thông báo chọn vị trí kho thành công\nĐịnh dạng JSON
+deactivate staffPresentation
+frontend --> user: Hiển thị chọn vị trí kho thành công
+deactivate frontend
+deactivate user
+
+@enduml
+

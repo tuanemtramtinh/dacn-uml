@@ -1,0 +1,61 @@
+@startuml
+
+title Nhập kho: Tạo phiếu và chọn sản phẩm
+
+hide footbox
+
+actor "Nhân viên kho" as user
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+database ":Database" as database
+
+activate user
+
+' Tạo phiếu nhập kho mới
+user -> frontend: Tạo phiếu nhập kho mới
+activate frontend
+frontend -> staffPresentation: Tạo phiếu nhập kho mới\nPOST /inbound-orders
+activate staffPresentation
+staffPresentation -> service: createInboundOrder(request)
+activate service
+service -> persistence1: saveInboundOrder(order)
+activate persistence1
+persistence1 -> database: Lưu phiếu nhập kho
+activate database
+database --> persistence1: Lưu thành công
+deactivate database
+persistence1 --> service: Phiếu nhập kho đã được tạo
+deactivate persistence1
+service --> staffPresentation: Thông tin phiếu nhập kho mới
+deactivate service
+staffPresentation --> frontend: Thông tin phiếu nhập kho mới\nJSON
+deactivate staffPresentation
+frontend --> user: Hiển thị phiếu nhập kho mới
+
+' Thêm / chọn sản phẩm
+user -> frontend: Thêm/Chọn sản phẩm nhập kho
+frontend -> staffPresentation: Thêm sản phẩm vào phiếu nhập\nPOST /inbound-orders/{id}/items
+activate staffPresentation
+staffPresentation -> service: addItemsToInboundOrder(orderId, items)
+activate service
+service -> persistence1: updateInboundOrderItems(orderId, items)
+activate persistence1
+persistence1 -> database: Cập nhật danh sách sản phẩm trong phiếu nhập
+activate database
+database --> persistence1: Cập nhật thành công
+deactivate database
+persistence1 --> service: Cập nhật danh sách sản phẩm thành công
+deactivate persistence1
+service --> staffPresentation: Phiếu nhập sau khi thêm sản phẩm
+deactivate service
+staffPresentation --> frontend: Phiếu nhập sau khi thêm sản phẩm\nJSON
+deactivate staffPresentation
+frontend --> user: Hiển thị phiếu nhập với danh sách sản phẩm
+
+deactivate frontend
+deactivate user
+
+@enduml
+

@@ -7,7 +7,6 @@ actor "Nhân viên" as nv
 ' actor "Bộ phận sản xuất/Giao hàng" as bp
 rectangle "<<subsystem>>\nInbound-Outbound" {
   ' usecase "Tạo phiếu xuất kho" as UC0
-  usecase "Kiểm tra loại xuất kho" as UC1
   usecase "Thực hiện Xuất kho" as UC2
   usecase "Tạo phiếu xuất kho" as UC3
   usecase "Kiểm tra số lượng" as UC4
@@ -18,7 +17,6 @@ rectangle "<<subsystem>>\nInbound-Outbound" {
 ' bp --> UC0
 
 nv --> UC2
-UC2 .> UC1: <<include>>
 UC2 ..> UC3: <<include>>
 UC2 ..> UC4: <<include>>
 ' UC2 ..> UC5: <<include>>

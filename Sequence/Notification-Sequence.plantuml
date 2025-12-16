@@ -1,10 +1,11 @@
 @startuml
+hide footbox
 actor "Nhân viên" as User
-participant "Frontend" as FE
-participant "Presentation Layer" as PL
-participant "Alert Service" as AlertService
-participant "Persistence Layer" as Persistence
-database "Database" as DB
+participant ":Frontend" as FE
+participant ":Presentation Layer" as PL
+participant ":Alert Service" as AlertService
+participant ":Persistence Layer" as Persistence
+database ":Database" as DB
 
 activate User
 activate FE

@@ -1,0 +1,52 @@
+@startuml
+
+title Nhập kho: Xác nhận nhập kho
+
+hide footbox
+
+actor "Nhân viên kho" as user
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+participant ":WarehouseInspectPersistence" as persistence2
+database ":Database" as database
+
+activate user
+user -> frontend: Xác nhận nhập kho
+activate frontend
+frontend -> staffPresentation: Gửi yêu cầu xác nhận nhập kho\nPOST /inbound-orders/{id}/confirm
+activate staffPresentation
+staffPresentation -> service: confirmInboundOrder(id)
+activate service
+
+par "Cập nhật trạng thái phiếu xuất kho"
+  service -> persistence1: confirmInboundOrder(id)
+  activate persistence1
+  persistence1 -> database: Cập nhật trạng thái phiếu nhập kho
+  activate database
+  database --> persistence1: Trả về kết quả cập nhật
+  deactivate database
+  persistence1 --> service: Trả về kết quả cập nhật
+  deactivate persistence1
+else "Cập nhật số lượng"
+  service -> persistence2: updateItemQuantities(itemId)
+    activate persistence2
+    persistence2 -> database: Cập nhật số lượng hàng hoá
+    activate database
+    database --> persistence2: Cập nhật số lượng thành công
+    deactivate database
+    persistence2 --> service: Cập nhật số lượng thành công
+    deactivate persistence2
+end
+
+service --> staffPresentation: Trả về kết quả xác nhận nhập kho
+deactivate service
+staffPresentation --> frontend: Trả về kết quả cập nhật trạng thái nhập kho\nĐịnh dạng JSON
+deactivate staffPresentation
+frontend --> user: Cập nhật trạng thái nhập kho thành công trên giao diện
+deactivate frontend
+deactivate user
+
+@enduml
+

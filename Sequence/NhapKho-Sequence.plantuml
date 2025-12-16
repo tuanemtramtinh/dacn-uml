@@ -1,14 +1,15 @@
 @startuml
 
 title Nhập kho - Sequence Diagram
+hide footbox
 
 actor "Nhân viên kho" as user
-participant "Frontend" as frontend
-participant "StaffPresentation" as staffPresentation 
-participant "Inbound/Outbound Service" as service
-participant "InboundPersistence" as persistence1
-participant "WarehouseInspectPersistence" as persistence2
-participant "DefectiveOrderPersiistence" as persistence3
+participant ":Frontend" as frontend
+participant ":StaffPresentation" as staffPresentation 
+participant ":Inbound/Outbound Service" as service
+participant ":InboundPersistence" as persistence1
+participant ":WarehouseInspectPersistence" as persistence2
+participant ":DefectiveOrderPersiistence" as persistence3
 database "Database" as database
 
 activate user
